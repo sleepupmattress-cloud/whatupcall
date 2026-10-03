@@ -314,7 +314,8 @@
         loadRecent();
         break;
       case 'incoming':
-        if (!c && !S.incoming) showIncoming(m);
+        // A stale popup (its "closed" message was lost while offline) must not block new calls
+        if (!c && (!S.incoming || (!S.incoming.accepting && S.incoming.callId !== m.callId))) showIncoming(m);
         break;
       case 'incoming_closed':
         if (S.incoming && S.incoming.callId === m.callId && !S.incoming.accepting) {
@@ -592,8 +593,22 @@
   });
 
   // ---------- incoming ----------
-  let ringCtx, ringInt, titleInt;
+  let ringCtx, ringInt, titleInt, note;
+  // Chrome only allows sound after a click on the page, so unlock the ringer on the first click
+  const unlockAudio = () => {
+    try { ringCtx = ringCtx || new AudioContext(); ringCtx.resume(); } catch {}
+    if (window.Notification && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
+  };
+  document.addEventListener('pointerdown', unlockAudio, { once: true });
+  document.addEventListener('keydown', unlockAudio, { once: true });
   function startRing() {
+    stopRing();
+    try {
+      if (document.hidden && window.Notification && Notification.permission === 'granted') {
+        note = new Notification('Incoming WhatsApp call', { body: `${S.incoming?.name || 'Customer'} ${pretty(S.incoming?.from || '')}`, requireInteraction: true });
+        note.onclick = () => { window.focus(); note.close(); };
+      }
+    } catch {}
     try {
       ringCtx = ringCtx || new AudioContext();
       ringCtx.resume();
@@ -610,7 +625,11 @@
     let on = false;
     titleInt = setInterval(() => { document.title = (on = !on) ? 'Incoming call' : 'SleepUp WhatsApp call'; }, 900);
   }
-  function stopRing() { clearInterval(ringInt); clearInterval(titleInt); document.title = 'SleepUp WhatsApp call'; }
+  function stopRing() {
+    clearInterval(ringInt); clearInterval(titleInt); document.title = 'SleepUp WhatsApp call';
+    try { note && note.close(); } catch {}
+    note = null;
+  }
 
   function showIncoming(m) {
     S.incoming = { ...m, accepting: false };

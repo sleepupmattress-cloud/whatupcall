@@ -178,7 +178,9 @@ async function onCallEvent(c, contacts) {
       agent: null, status: 'ringing', createdAt: Date.now(), offer: c.session?.sdp, declinedBy: new Set(),
     };
     calls.set(id, rec);
-    if (onlineAgents().length === 0) { rec.status = 'missed'; await rejectCall(id); return; }
+    // Keep ringing even if nobody is online right now: a telecaller whose socket is
+    // reconnecting (or who opens the dialer) still gets the call when they connect.
+    console.log(`incoming call ${id} from ${rec.customer}, online: ${onlineAgents().join(', ') || 'nobody'}`);
     rec.ringTimer = setTimeout(async () => {
       if (rec.status !== 'ringing') return;
       rec.status = 'missed';
@@ -190,6 +192,7 @@ async function onCallEvent(c, contacts) {
   }
 
   if (c.event === 'terminate') {
+    console.log(`call ${id} terminated: ${c.status} ${c.duration || 0}s`);
     const rec = calls.get(id);
     if (!rec || rec.result) return;
     clearTimeout(rec.ringTimer);
@@ -237,6 +240,7 @@ app.post('/webhook', express.raw({ type: '*/*', limit: '2mb' }), (req, res) => {
       if (ch.field !== 'calls') continue;
       const v = ch.value || {};
       if (v.metadata?.phone_number_id && v.metadata.phone_number_id !== cfg.phoneNumberId) continue;
+      for (const c of v.calls || []) console.log('webhook call:', c.event, c.direction || '', c.id);
       for (const c of v.calls || []) onCallEvent(c, v.contacts || []).catch(e => console.error('call event:', e.message));
       for (const s of v.statuses || []) if (s.type === 'call') onCallStatus(s);
     }
@@ -343,7 +347,9 @@ app.post('/api/accept', auth, async (req, res) => {
     rec.status = 'connected';
     res.json({ ok: true });
   } catch (e) {
+    console.warn('accept failed', callId, e.message);
     rec.status = 'missed';
+    await rejectCall(callId);
     res.status(502).json(friendly(e));
   }
 });
