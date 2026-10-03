@@ -48,6 +48,10 @@
   .field input { width: 100%; padding: 11px 13px; border: 2px solid var(--line); border-radius: 10px; color: var(--ink); background: #fff; font: 16px var(--sans); }
   .field input:focus { outline: none; border-color: var(--ink); }
   .field input.num { font-family: var(--mono); font-size: 26px; letter-spacing: .02em; padding: 12px 14px; }
+  .numrow { display: flex; gap: 8px; }
+  .numrow input { flex: 1; min-width: 0; }
+  .pastebtn { flex: none; padding: 0 16px; border: 2px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); font: 600 15px var(--sans); cursor: pointer; }
+  .pastebtn:hover { border-color: var(--ink); }
 
   .perm { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 10px; background: var(--paper); border-left: 4px solid var(--line); }
   .perm[data-state="ok"] { border-left-color: var(--go); }
@@ -140,7 +144,10 @@
   <main id="dialerView" hidden>
     <div class="field">
       <label for="num">Customer's WhatsApp number</label>
-      <input id="num" class="num" inputmode="tel" autocomplete="off" placeholder="98765 43210">
+      <div class="numrow">
+        <input id="num" class="num" inputmode="tel" autocomplete="off" placeholder="98765 43210">
+        <button type="button" class="pastebtn" id="pasteBtn" title="Paste number copied from TeleCRM">Paste</button>
+      </div>
     </div>
     <div class="field">
       <label for="cname">Customer name (optional)</label>
@@ -390,6 +397,34 @@
     S.waitingFor = null; stopPoll();
     clearTimeout(S.debounce); S.debounce = setTimeout(checkPermission, 600);
   });
+  // Pull a phone number out of whatever was copied (TeleCRM gives "917904114011", "+91 79041 14011", etc.)
+  function extractNumber(text) {
+    const m = String(text || '').match(/\+?\d[\d\s().-]{8,}\d/);
+    let d = digits(m ? m[0] : text);
+    if (d.startsWith('00')) d = d.slice(2);
+    if (d.length === 11 && d.startsWith('0')) d = d.slice(1);
+    return d.length >= 10 ? d : null;
+  }
+  function useNumber(text) {
+    if (S.call) return false;
+    const d = extractNumber(text);
+    if (!d) { toast("Couldn't find a phone number in what you copied.", true); return false; }
+    $('num').value = pretty(d);
+    S.waitingFor = null; stopPoll(); clearTimeout(S.debounce);
+    checkPermission();
+    return true;
+  }
+  $('num').addEventListener('paste', e => {
+    const text = (e.clipboardData || window.clipboardData)?.getData('text');
+    if (!text) return;
+    e.preventDefault();
+    useNumber(text);
+  });
+  $('pasteBtn').addEventListener('click', async () => {
+    try { useNumber(await navigator.clipboard.readText()); }
+    catch { $('num').focus(); toast('Press Ctrl+V to paste the number.'); }
+  });
+
   $('askBtn').addEventListener('click', () => askPermission('message'));
   $('askTplBtn').addEventListener('click', () => askPermission('template'));
   $('recheckBtn').addEventListener('click', checkPermission);
