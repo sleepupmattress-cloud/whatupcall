@@ -457,17 +457,30 @@
     }
   }
   function newPeer() {
-    const pc = new RTCPeerConnection({ iceServers: ICE });
+    const pc = new RTCPeerConnection({ iceServers: S.config.iceServers || ICE });
     pc.ontrack = e => {
       const a = $('remote');
       a.srcObject = e.streams[0] || new MediaStream([e.track]);
-      a.play().catch(() => {});
+      a.play().catch(err => {
+        console.warn('remote audio play blocked:', err);
+        toast('Click anywhere on this page to hear the customer.', true);
+        document.addEventListener('click', () => a.play().catch(() => {}), { once: true });
+      });
+    };
+    let failed = false;
+    const onFail = () => {
+      if (failed || !S.call) return;
+      failed = true;
+      toast('Audio could not connect. Your network may block WhatsApp audio (UDP). Try mobile hotspot, or ask admin to add a TURN server.', true);
+      hangup();
+    };
+    pc.oniceconnectionstatechange = () => {
+      console.log('ICE:', pc.iceConnectionState);
+      if (pc.iceConnectionState === 'failed') onFail();
     };
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'failed' && S.call) {
-        toast('Audio connection failed. Check your internet and call again.', true);
-        hangup();
-      }
+      console.log('WebRTC:', pc.connectionState);
+      if (pc.connectionState === 'failed') onFail();
     };
     return pc;
   }

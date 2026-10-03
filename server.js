@@ -16,6 +16,15 @@ for (const k of ['WA_TOKEN', 'PHONE_NUMBER_ID', 'VERIFY_TOKEN', 'AGENTS']) {
   if (!env[k]) { console.error(`Missing ${k} in .env`); process.exit(1); }
 }
 
+// ICE_SERVERS = JSON array of RTCIceServer, e.g. [{"urls":"turns:turn.example.com:443?transport=tcp","username":"u","credential":"p"}]
+function parseIce(raw) {
+  const stun = [{ urls: 'stun:stun.l.google.com:19302' }];
+  if (!raw) return stun;
+  try { const list = JSON.parse(raw); if (Array.isArray(list) && list.length) return list; } catch {}
+  console.warn('ICE_SERVERS is not a valid JSON array, using STUN only.');
+  return stun;
+}
+
 const cfg = {
   port: Number(env.PORT || 3100),
   token: env.WA_TOKEN,
@@ -31,6 +40,7 @@ const cfg = {
   permissionTemplateLang: env.PERMISSION_TEMPLATE_LANG || 'en',
   makeWebhook: env.MAKE_WEBHOOK_URL || '',
   ringSeconds: Number(env.INCOMING_RING_SECONDS || 25),
+  iceServers: parseIce(env.ICE_SERVERS),
 };
 if (!cfg.appSecret) console.warn('APP_SECRET not set: webhook signatures are NOT verified.');
 if (!env.SESSION_SECRET) console.warn('SESSION_SECRET not set: telecallers get logged out on every restart.');
@@ -253,7 +263,7 @@ app.post('/api/login', async (req, res) => {
   res.json({ token: makeToken(name), name });
 });
 
-app.get('/api/config', auth, (req, res) => res.json({ agent: req.agent, hasTemplate: !!cfg.permissionTemplate }));
+app.get('/api/config', auth, (req, res) => res.json({ agent: req.agent, hasTemplate: !!cfg.permissionTemplate, iceServers: cfg.iceServers }));
 
 app.get('/api/permission', auth, async (req, res) => {
   const to = normalize(req.query.to);
