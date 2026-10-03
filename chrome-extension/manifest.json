@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "SleepUp WhatsApp Call",
+  "version": "1.0.0",
+  "description": "Adds a WhatsApp call button to TeleCRM and a right-click 'Call on WhatsApp' for any number.",
+  "permissions": ["contextMenus", "storage"],
+  "host_permissions": ["*://*.telecrm.in/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["*://*.telecrm.in/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "options.html",
+  "action": { "default_title": "Open WhatsApp dialer" }
+}

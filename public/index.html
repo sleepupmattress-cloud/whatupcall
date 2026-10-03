@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SleepUp WhatsApp call</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1B2F4B;
+    --paper: #F6F8FB;
+    --card: #FFFFFF;
+    --line: #D9E0EA;
+    --muted: #56677D;
+    --go: #138A55;
+    --go-dark: #0E6B42;
+    --stop: #C33A3F;
+    --stop-dark: #9E2C30;
+    --wait: #B9770E;
+    --sans: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "Atkinson Hyperlegible Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: var(--sans); font-size: 16px; line-height: 1.45; color: var(--ink); background: var(--paper); }
+  button { font: inherit; }
+  :focus-visible { outline: 3px solid #4C7BD9; outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  .app { max-width: 440px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+
+  header { background: var(--ink); color: #fff; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; }
+  .brand { font-weight: 700; font-size: 17px; }
+  .brand span { display: block; font-weight: 400; font-size: 13px; opacity: .78; }
+  .who { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #8A97A8; display: inline-block; }
+  .dot.on { background: #3DDC97; }
+  .linkbtn { background: none; border: 0; color: inherit; text-decoration: underline; cursor: pointer; padding: 2px; font-size: 14px; }
+
+  /* mattress ticking stripe */
+  .ticking { height: 10px; background: repeating-linear-gradient(90deg, var(--ink) 0 4px, #fff 4px 9px, var(--ink) 9px 10px, #fff 10px 20px); }
+
+  main { padding: 20px 18px 28px; display: flex; flex-direction: column; gap: 18px; flex: 1; }
+  label { display: block; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+  .field input { width: 100%; padding: 11px 13px; border: 2px solid var(--line); border-radius: 10px; color: var(--ink); background: #fff; font: 16px var(--sans); }
+  .field input:focus { outline: none; border-color: var(--ink); }
+  .field input.num { font-family: var(--mono); font-size: 26px; letter-spacing: .02em; padding: 12px 14px; }
+
+  .perm { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 10px; background: var(--paper); border-left: 4px solid var(--line); }
+  .perm[data-state="ok"] { border-left-color: var(--go); }
+  .perm[data-state="none"], .perm[data-state="waiting"] { border-left-color: var(--wait); }
+  .perm[data-state="error"] { border-left-color: var(--stop); }
+  .perm p { margin: 0; font-size: 15px; }
+  .perm .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+  .btn { border: 2px solid var(--ink); background: var(--ink); color: #fff; border-radius: 9px; padding: 9px 14px; cursor: pointer; font-weight: 600; font-size: 15px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.ghost { background: #fff; color: var(--ink); }
+  .btn.small { padding: 6px 10px; font-size: 14px; }
+
+  .callzone { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 6px 0 2px; }
+  .callbtn { width: 112px; height: 112px; border-radius: 50%; border: 0; background: var(--go); color: #fff; cursor: pointer; position: relative; display: grid; place-items: center; transition: background .15s; }
+  .callbtn:hover:not(:disabled) { background: var(--go-dark); }
+  .callbtn:disabled { background: #AFC3B8; cursor: not-allowed; }
+  .callbtn svg { width: 40px; height: 40px; transition: transform .2s; }
+  .callbtn.live { background: var(--stop); }
+  .callbtn.live:hover:not(:disabled) { background: var(--stop-dark); }
+  .callbtn.live svg { transform: rotate(135deg); }
+  .callbtn.ringing::after { content: ""; position: absolute; inset: -9px; border-radius: 50%; border: 3px solid var(--stop); animation: breathe 1.4s ease-in-out infinite; }
+  @keyframes breathe { 0%, 100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.09); opacity: .25; } }
+  .calllabel { font-weight: 700; font-size: 17px; }
+  .status { font-size: 15px; color: var(--muted); min-height: 22px; text-align: center; }
+  .timer { font-family: var(--mono); font-size: 24px; }
+  .mute { min-width: 120px; }
+  .mute[aria-pressed="true"] { background: var(--wait); border-color: var(--wait); color: #fff; }
+
+  .recent h2 { font-size: 15px; font-weight: 600; color: var(--muted); margin: 0 0 6px; }
+  .recent ul { list-style: none; margin: 0; padding: 0; }
+  .recent li button { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 10px 2px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink); text-align: left; cursor: pointer; }
+  .recent li button:hover { background: var(--paper); }
+  .recent .n { font-family: var(--mono); font-size: 15px; }
+  .recent .t { font-size: 13px; color: var(--muted); text-align: right; }
+  .recent .r { font-size: 13px; color: var(--muted); }
+  .recent .r.ok { color: var(--go); }
+  .recent .empty { font-size: 14px; color: var(--muted); margin: 4px 0; }
+
+  .login { padding: 28px 18px; display: flex; flex-direction: column; gap: 14px; }
+  .login h1 { font-size: 22px; margin: 0; }
+  .login p { margin: 0; color: var(--muted); font-size: 15px; }
+  .login .btn { padding: 12px; font-size: 16px; }
+  .err { color: var(--stop); font-size: 14px; min-height: 20px; margin: 0; }
+
+  .incoming { position: fixed; inset: 0; z-index: 20; background: rgba(27, 47, 75, .97); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; }
+  .incoming h2 { margin: 0; font-size: 18px; font-weight: 600; opacity: .85; }
+  .incoming .who-in { font-size: 24px; font-weight: 700; }
+  .incoming .n { font-family: var(--mono); font-size: 20px; opacity: .9; }
+  .incoming .row { display: flex; gap: 14px; margin-top: 10px; }
+  .incoming .row .btn { min-width: 128px; padding: 14px; font-size: 17px; }
+  .incoming .answer { background: var(--go); border-color: var(--go); }
+  .incoming .decline { background: transparent; border-color: #fff; }
+
+  .toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); max-width: 400px; width: calc(100% - 32px); background: var(--ink); color: #fff; padding: 12px 14px; border-radius: 10px; font-size: 15px; z-index: 30; }
+  .toast.bad { background: var(--stop); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .callbtn.ringing::after { animation: none; }
+    .callbtn, .callbtn svg { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">SleepUp<span>WhatsApp calls</span></div>
+    <div class="who" id="who" hidden>
+      <span><span class="dot" id="dot"></span> <span id="agentName"></span></span>
+      <button class="linkbtn" id="signOut" type="button">Sign out</button>
+    </div>
+  </header>
+  <div class="ticking" aria-hidden="true"></div>
+
+  <!-- Sign in -->
+  <form class="login" id="loginView" hidden>
+    <h1>Telecaller sign in</h1>
+    <p>Use the name and PIN your manager gave you.</p>
+    <div class="field"><label for="loginName">Name</label><input id="loginName" autocomplete="username" required></div>
+    <div class="field"><label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" autocomplete="current-password" required></div>
+    <p class="err" id="loginErr" role="alert"></p>
+    <button class="btn" type="submit" id="loginBtn">Sign in</button>
+  </form>
+
+  <!-- Dialer -->
+  <main id="dialerView" hidden>
+    <div class="field">
+      <label for="num">Customer's WhatsApp number</label>
+      <input id="num" class="num" inputmode="tel" autocomplete="off" placeholder="98765 43210">
+    </div>
+    <div class="field">
+      <label for="cname">Customer name (optional)</label>
+      <input id="cname" autocomplete="off" placeholder="For your call log">
+    </div>
+
+    <div class="perm" id="perm" data-state="idle" aria-live="polite">
+      <p id="permText">Enter a number to check if the customer allowed calls.</p>
+      <div class="actions">
+        <button class="btn small" id="askBtn" type="button" hidden>Ask permission on WhatsApp</button>
+        <button class="btn small ghost" id="askTplBtn" type="button" hidden>Chat closed? Send template</button>
+        <button class="linkbtn" id="recheckBtn" type="button" hidden style="color:var(--ink)">Check again</button>
+      </div>
+    </div>
+
+    <div class="callzone">
+      <button class="callbtn" id="callBtn" type="button" disabled aria-describedby="status">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.33.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>
+      </button>
+      <div class="calllabel" id="callLabel">Call</div>
+      <div class="status" id="status" aria-live="polite"></div>
+      <button class="btn ghost mute" id="muteBtn" type="button" aria-pressed="false" hidden>Mute</button>
+    </div>
+
+    <section class="recent">
+      <h2>Recent calls</h2>
+      <ul id="recentList"></ul>
+    </section>
+  </main>
+</div>
+
+<div class="incoming" id="incoming" hidden role="dialog" aria-modal="true" aria-labelledby="inTitle">
+  <h2 id="inTitle">Incoming WhatsApp call</h2>
+  <div class="who-in" id="inName"></div>
+  <div class="n" id="inNum"></div>
+  <div class="status" id="inStatus" style="color:#fff"></div>
+  <div class="row">
+    <button class="btn decline" id="declineBtn" type="button">Decline</button>
+    <button class="btn answer" id="answerBtn" type="button">Answer</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="alert" hidden></div>
+<audio id="remote" autoplay playsinline></audio>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const ICE = [{ urls: 'stun:stun.l.google.com:19302' }];
+  const RESULT = { connected: 'Connected', not_answered: 'No answer', rejected: 'Declined by customer', failed: 'Failed', missed: 'Missed incoming call', declined: 'Declined', ended: 'Ended' };
+
+  const S = {
+    token: localStorage.getItem('sud_token'),
+    agent: localStorage.getItem('sud_agent'),
+    ws: null, wsRetry: 0,
+    pc: null, stream: null,
+    call: null,          // { id, to, incoming, cancel, connectedAt }
+    earlyAnswer: null,
+    incoming: null,
+    perm: null, waitingFor: null, pollTimer: null, debounce: null,
+    timer: null, config: {},
+  };
+
+  // ---------- utils ----------
+  const digits = v => String(v || '').replace(/\D/g, '');
+  const pretty = d => {
+    d = digits(d);
+    if (d.length === 12 && d.startsWith('91')) return `+91 ${d.slice(2, 7)} ${d.slice(7)}`;
+    if (d.length === 10) return `${d.slice(0, 5)} ${d.slice(5)}`;
+    return d ? `+${d}` : '';
+  };
+  const mmss = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const when = unix => new Date(unix * 1000).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+  let toastT;
+  function toast(msg, bad = false) {
+    const t = $('toast');
+    t.textContent = msg; t.className = 'toast' + (bad ? ' bad' : ''); t.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, bad ? 7000 : 3500);
+  }
+
+  async function api(path, { method = 'GET', body } = {}) {
+    const res = await fetch(path, {
+      method,
+      headers: { 'Content-Type': 'application/json', ...(S.token ? { Authorization: `Bearer ${S.token}` } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401 && path !== '/api/login') { signOut(); throw new Error('Session expired. Sign in again.'); }
+    if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+    return data;
+  }
+
+  // ---------- views ----------
+  function showLogin() {
+    $('loginView').hidden = false; $('dialerView').hidden = true; $('who').hidden = true;
+    $('loginName').focus();
+  }
+  async function showDialer() {
+    $('loginView').hidden = true; $('dialerView').hidden = false; $('who').hidden = false;
+    $('agentName').textContent = S.agent;
+    connectWS();
+    try { S.config = await api('/api/config'); } catch {}
+    $('askTplBtn').dataset.enabled = S.config.hasTemplate ? '1' : '';
+    applyParams();
+    loadRecent();
+  }
+  function signOut() {
+    localStorage.removeItem('sud_token'); localStorage.removeItem('sud_agent');
+    S.token = null; S.agent = null;
+    if (S.ws) { S.ws.onclose = null; S.ws.close(); S.ws = null; }
+    showLogin();
+  }
+
+  $('loginView').addEventListener('submit', async e => {
+    e.preventDefault();
+    $('loginErr').textContent = ''; $('loginBtn').disabled = true;
+    try {
+      const r = await api('/api/login', { method: 'POST', body: { name: $('loginName').value, pin: $('loginPin').value } });
+      S.token = r.token; S.agent = r.name;
+      localStorage.setItem('sud_token', r.token); localStorage.setItem('sud_agent', r.name);
+      $('loginPin').value = '';
+      showDialer();
+    } catch (err) { $('loginErr').textContent = err.message; }
+    finally { $('loginBtn').disabled = false; }
+  });
+  $('signOut').addEventListener('click', () => {
+    if (S.call) return toast('Finish the current call first.', true);
+    signOut();
+  });
+
+  // ---------- realtime ----------
+  function connectWS() {
+    if (!S.token) return;
+    const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws?token=${encodeURIComponent(S.token)}`);
+    S.ws = ws;
+    ws.onopen = () => { S.wsRetry = 0; $('dot').classList.add('on'); };
+    ws.onclose = e => {
+      $('dot').classList.remove('on');
+      if (e.code === 4001) return signOut();
+      if (S.token) setTimeout(connectWS, Math.min(10000, 1000 * 2 ** S.wsRetry++));
+    };
+    ws.onmessage = e => { try { onServer(JSON.parse(e.data)); } catch {} };
+  }
+
+  function onServer(m) {
+    const c = S.call;
+    switch (m.type) {
+      case 'answer':
+        if (c && c.id === m.callId) applyAnswer(m.sdp);
+        else if (c && !c.id) S.earlyAnswer = m;
+        break;
+      case 'status':
+        if (!c || c.id !== m.callId) break;
+        if (m.status === 'RINGING') setPhase('ringing');
+        if (m.status === 'ACCEPTED') setPhase('connected');
+        if (m.status === 'REJECTED') $('status').textContent = 'Customer declined the call.';
+        break;
+      case 'ended':
+        if (c && c.id === m.callId) endLocal(m.result, m.duration);
+        loadRecent();
+        break;
+      case 'incoming':
+        if (!c && !S.incoming) showIncoming(m);
+        break;
+      case 'incoming_closed':
+        if (S.incoming && S.incoming.callId === m.callId && !S.incoming.accepting) {
+          hideIncoming();
+          if (m.reason === 'taken' && m.by !== S.agent) toast(`${m.by} answered the call.`);
+        }
+        loadRecent();
+        break;
+    }
+  }
+
+  // ---------- permission ----------
+  function setPerm(state, text, opts = {}) {
+    $('perm').dataset.state = state;
+    $('permText').textContent = text;
+    $('askBtn').hidden = !opts.ask;
+    $('askTplBtn').hidden = !(opts.ask && $('askTplBtn').dataset.enabled);
+    $('recheckBtn').hidden = !opts.recheck;
+    updateCallBtn();
+  }
+
+  function renderPerm(p) {
+    S.perm = p;
+    const allowed = p.status === 'temporary' || p.status === 'permanent';
+    if (allowed) {
+      stopPoll();
+      if (!p.canCall) {
+        const lim = (p.callLimits || []).find(l => l.limit_expiration_time);
+        return setPerm('none', `Daily call limit reached for this customer${lim ? `. Try after ${when(lim.limit_expiration_time)}` : ''}.`, { recheck: true });
+      }
+      return setPerm('ok', p.status === 'permanent'
+        ? 'Customer allowed calls anytime.'
+        : `Customer allowed calls until ${when(p.expiresAt)}.`);
+    }
+    if (S.waitingFor === p.to) {
+      return setPerm('waiting', 'Permission request sent. Waiting for the customer to tap Allow on WhatsApp…', { recheck: true });
+    }
+    if (!p.canRequest) {
+      const lim = (p.requestLimits || []).find(l => l.limit_expiration_time);
+      return setPerm('none', `Permission was already asked recently${lim ? `. You can ask again after ${when(lim.limit_expiration_time)}` : ''}.`, { recheck: true });
+    }
+    setPerm('none', "Customer hasn't allowed calls yet.", { ask: true });
+  }
+
+  async function checkPermission() {
+    const d = digits($('num').value);
+    if (d.length < 10) { S.perm = null; return setPerm('idle', 'Enter a number to check if the customer allowed calls.'); }
+    setPerm('checking', 'Checking call permission…');
+    try { renderPerm(await api(`/api/permission?to=${encodeURIComponent($('num').value)}`)); }
+    catch (e) { S.perm = null; setPerm('error', e.message, { recheck: true }); }
+  }
+
+  async function askPermission(mode) {
+    $('askBtn').disabled = $('askTplBtn').disabled = true;
+    try {
+      const r = await api('/api/permission-request', { method: 'POST', body: { to: $('num').value, mode } });
+      S.waitingFor = r.to;
+      toast(r.sent === 'template' ? 'Permission template sent.' : 'Permission request sent on WhatsApp.');
+      renderPerm({ ...(S.perm || {}), to: r.to, status: 'no_permission', canRequest: false });
+      startPoll(r.to);
+    } catch (e) { toast(e.message, true); }
+    finally { $('askBtn').disabled = $('askTplBtn').disabled = false; }
+  }
+
+  function startPoll(to) {
+    stopPoll();
+    let n = 0;
+    S.pollTimer = setInterval(async () => {
+      if (++n > 45 || S.waitingFor !== to) return stopPoll();
+      try {
+        const p = await api(`/api/permission?to=${to}`);
+        if (p.status !== 'no_permission') { S.waitingFor = null; renderPerm(p); toast('Customer allowed calls. You can call now.'); }
+      } catch {}
+    }, 4000);
+  }
+  function stopPoll() { clearInterval(S.pollTimer); S.pollTimer = null; }
+
+  $('num').addEventListener('input', () => {
+    if (S.call) return;
+    S.waitingFor = null; stopPoll();
+    clearTimeout(S.debounce); S.debounce = setTimeout(checkPermission, 600);
+  });
+  $('askBtn').addEventListener('click', () => askPermission('message'));
+  $('askTplBtn').addEventListener('click', () => askPermission('template'));
+  $('recheckBtn').addEventListener('click', checkPermission);
+
+  // ---------- WebRTC ----------
+  function preferOpus(transceiver) {
+    try {
+      const caps = RTCRtpReceiver.getCapabilities('audio');
+      if (!caps || !transceiver.setCodecPreferences) return;
+      const opus = caps.codecs.filter(c => /opus/i.test(c.mimeType));
+      const dtmf = caps.codecs.filter(c => /telephone-event/i.test(c.mimeType));
+      if (opus.length) transceiver.setCodecPreferences([...opus, ...dtmf]);
+    } catch {}
+  }
+  function iceDone(pc, ms = 3000) {
+    if (pc.iceGatheringState === 'complete') return Promise.resolve();
+    return new Promise(res => {
+      const t = setTimeout(res, ms);
+      pc.addEventListener('icegatheringstatechange', () => {
+        if (pc.iceGatheringState === 'complete') { clearTimeout(t); res(); }
+      });
+    });
+  }
+  async function getMic() {
+    try {
+      return await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    } catch {
+      toast('Microphone is blocked. Click the lock icon in the address bar, allow the microphone, then try again.', true);
+      return null;
+    }
+  }
+  function newPeer() {
+    const pc = new RTCPeerConnection({ iceServers: ICE });
+    pc.ontrack = e => {
+      const a = $('remote');
+      a.srcObject = e.streams[0] || new MediaStream([e.track]);
+      a.play().catch(() => {});
+    };
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'failed' && S.call) {
+        toast('Audio connection failed. Check your internet and call again.', true);
+        hangup();
+      }
+    };
+    return pc;
+  }
+  function cleanupMedia() {
+    try { S.pc && S.pc.close(); } catch {}
+    S.stream && S.stream.getTracks().forEach(t => t.stop());
+    S.pc = null; S.stream = null;
+    $('remote').srcObject = null;
+  }
+  async function applyAnswer(sdp) {
+    if (!S.pc || S.pc.signalingState !== 'have-local-offer' || !sdp) return;
+    try { await S.pc.setRemoteDescription({ type: 'answer', sdp }); }
+    catch (e) { toast('Could not connect audio: ' + e.message, true); hangup(); }
+  }
+
+  // ---------- outgoing ----------
+  async function startCall() {
+    if (S.call) return;
+    const to = $('num').value;
+    const c = S.call = { id: null, to, cancel: false };
+    setPhase('starting');
+    S.stream = await getMic();
+    if (!S.stream || c.cancel) { cleanupMedia(); return resetCall(); }
+    const pc = S.pc = newPeer();
+    const tr = pc.addTransceiver(S.stream.getAudioTracks()[0], { direction: 'sendrecv', streams: [S.stream] });
+    preferOpus(tr);
+    try {
+      await pc.setLocalDescription(await pc.createOffer());
+      await iceDone(pc);
+      if (c.cancel) { cleanupMedia(); return resetCall(); }
+      const r = await api('/api/call', { method: 'POST', body: { to, name: $('cname').value.trim(), sdp: pc.localDescription.sdp } });
+      c.id = r.callId;
+      if (c.cancel) return hangup();
+      const early = r.answer || (S.earlyAnswer && S.earlyAnswer.callId === r.callId ? S.earlyAnswer.sdp : null);
+      S.earlyAnswer = null;
+      if (S.call === c && c.phase !== 'ringing' && c.phase !== 'connected') setPhase('calling');
+      if (early) await applyAnswer(early);
+    } catch (e) {
+      toast(e.message, true);
+      cleanupMedia(); resetCall();
+      checkPermission();
+    }
+  }
+
+  async function hangup() {
+    const c = S.call;
+    if (!c) return;
+    if (c.incoming && !c.id) return;
+    if (!c.id) { c.cancel = true; setPhase('ending'); return; }
+    setPhase('ending');
+    try { await api('/api/hangup', { method: 'POST', body: { callId: c.id } }); } catch {}
+    setTimeout(() => { // fallback if the terminate webhook is slow
+      if (S.call === c) endLocal('ended', c.connectedAt ? Math.round((Date.now() - c.connectedAt) / 1000) : 0);
+    }, 5000);
+  }
+
+  function endLocal(result, duration = 0) {
+    cleanupMedia();
+    clearInterval(S.timer);
+    S.call = null;
+    setPhase('idle');
+    $('status').textContent = `Call ended: ${RESULT[result] || 'Ended'}${duration ? ` after ${mmss(duration)}` : ''}.`;
+    loadRecent();
+    if (digits($('num').value).length >= 10) checkPermission();
+  }
+  function resetCall() { S.call = null; clearInterval(S.timer); setPhase('idle'); $('status').textContent = ''; }
+
+  function setPhase(phase) {
+    const c = S.call;
+    if (c) c.phase = phase;
+    const btn = $('callBtn');
+    btn.classList.toggle('live', phase !== 'idle');
+    btn.classList.toggle('ringing', phase === 'ringing');
+    $('muteBtn').hidden = phase !== 'connected';
+    const label = { idle: 'Call', starting: 'Cancel', calling: 'Hang up', ringing: 'Hang up', connected: 'Hang up', ending: 'Ending…' }[phase];
+    $('callLabel').textContent = label;
+    btn.setAttribute('aria-label', label);
+    const st = $('status');
+    if (phase === 'starting') st.textContent = 'Connecting…';
+    if (phase === 'calling') st.textContent = 'Calling on WhatsApp…';
+    if (phase === 'ringing') st.textContent = "Ringing on customer's phone…";
+    if (phase === 'ending') st.textContent = 'Ending call…';
+    if (phase === 'connected' && c && !c.connectedAt) {
+      c.connectedAt = Date.now();
+      const tick = () => { st.innerHTML = `<span class="timer">${mmss(Math.round((Date.now() - c.connectedAt) / 1000))}</span>`; };
+      tick(); clearInterval(S.timer); S.timer = setInterval(tick, 1000);
+      $('muteBtn').setAttribute('aria-pressed', 'false'); $('muteBtn').textContent = 'Mute';
+    }
+    updateCallBtn();
+  }
+
+  function updateCallBtn() {
+    const btn = $('callBtn');
+    if (S.call) { btn.disabled = S.call.phase === 'ending'; return; }
+    const p = S.perm;
+    btn.disabled = !(p && (p.status === 'temporary' || p.status === 'permanent') && p.canCall && digits($('num').value).length >= 10);
+  }
+
+  $('callBtn').addEventListener('click', () => (S.call ? hangup() : startCall()));
+  $('muteBtn').addEventListener('click', () => {
+    const t = S.stream && S.stream.getAudioTracks()[0];
+    if (!t) return;
+    t.enabled = !t.enabled;
+    $('muteBtn').setAttribute('aria-pressed', String(!t.enabled));
+    $('muteBtn').textContent = t.enabled ? 'Mute' : 'Unmute';
+  });
+
+  // ---------- incoming ----------
+  let ringCtx, ringInt, titleInt;
+  function startRing() {
+    try {
+      ringCtx = ringCtx || new AudioContext();
+      ringCtx.resume();
+      const beep = () => {
+        const o = ringCtx.createOscillator(), g = ringCtx.createGain(), t = ringCtx.currentTime;
+        o.frequency.value = 480;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.25, t + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+        o.connect(g).connect(ringCtx.destination); o.start(t); o.stop(t + 0.95);
+      };
+      beep(); ringInt = setInterval(beep, 1700);
+    } catch {}
+    let on = false;
+    titleInt = setInterval(() => { document.title = (on = !on) ? 'Incoming call' : 'SleepUp WhatsApp call'; }, 900);
+  }
+  function stopRing() { clearInterval(ringInt); clearInterval(titleInt); document.title = 'SleepUp WhatsApp call'; }
+
+  function showIncoming(m) {
+    S.incoming = { ...m, accepting: false };
+    $('inName').textContent = m.name || 'WhatsApp customer';
+    $('inNum').textContent = pretty(m.from);
+    $('inStatus').textContent = '';
+    $('answerBtn').disabled = $('declineBtn').disabled = false;
+    $('incoming').hidden = false;
+    $('answerBtn').focus();
+    startRing();
+  }
+  function hideIncoming() { stopRing(); $('incoming').hidden = true; S.incoming = null; }
+
+  $('answerBtn').addEventListener('click', async () => {
+    const inc = S.incoming;
+    if (!inc || S.call) return;
+    inc.accepting = true; stopRing();
+    $('answerBtn').disabled = $('declineBtn').disabled = true;
+    $('inStatus').textContent = 'Connecting…';
+    S.stream = await getMic();
+    if (!S.stream) { inc.accepting = false; $('answerBtn').disabled = $('declineBtn').disabled = false; $('inStatus').textContent = ''; return; }
+    const pc = S.pc = newPeer();
+    try {
+      await pc.setRemoteDescription({ type: 'offer', sdp: inc.sdp });
+      const track = S.stream.getAudioTracks()[0];
+      const tr = pc.getTransceivers().find(t => t.receiver.track && t.receiver.track.kind === 'audio');
+      if (tr) { await tr.sender.replaceTrack(track); tr.direction = 'sendrecv'; }
+      else pc.addTrack(track, S.stream);
+      await pc.setLocalDescription(await pc.createAnswer());
+      await iceDone(pc);
+      S.call = { id: inc.callId, to: inc.from, incoming: true };
+      await api('/api/accept', { method: 'POST', body: { callId: inc.callId, sdp: pc.localDescription.sdp } });
+      hideIncoming();
+      $('num').value = pretty(inc.from);
+      $('cname').value = inc.name || '';
+      setPhase('connected');
+    } catch (e) {
+      toast(e.message, true);
+      cleanupMedia(); S.call = null; hideIncoming(); setPhase('idle');
+    }
+  });
+  $('declineBtn').addEventListener('click', async () => {
+    const inc = S.incoming;
+    if (!inc) return;
+    hideIncoming();
+    try { await api('/api/decline', { method: 'POST', body: { callId: inc.callId } }); } catch {}
+  });
+
+  // ---------- recent ----------
+  async function loadRecent() {
+    let list = [];
+    try { list = await api('/api/calls'); } catch { return; }
+    const ul = $('recentList');
+    ul.innerHTML = '';
+    if (!list.length) { ul.innerHTML = '<li class="empty">Calls you make will show up here.</li>'; return; }
+    for (const e of list.slice(0, 12)) {
+      const li = document.createElement('li');
+      const b = document.createElement('button');
+      b.type = 'button';
+      const t = new Date(e.ended_at || e.started_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+      b.innerHTML = `<span class="n"></span><span class="t"></span><span class="r${e.result === 'connected' ? ' ok' : ''}"></span><span class="t"></span>`;
+      const [n, time, r, dur] = b.children;
+      n.textContent = (e.customer_name ? e.customer_name + '  ' : '') + pretty(e.customer_number);
+      time.textContent = t;
+      r.textContent = (e.direction === 'incoming' ? 'Incoming: ' : '') + (RESULT[e.result] || e.result);
+      dur.textContent = e.duration_seconds ? mmss(e.duration_seconds) : '';
+      b.addEventListener('click', () => {
+        if (S.call) return;
+        $('num').value = pretty(e.customer_number);
+        $('cname').value = e.customer_name || '';
+        checkPermission();
+      });
+      li.appendChild(b); ul.appendChild(li);
+    }
+  }
+
+  // ---------- prefill from TeleCRM extension (#to=...&name=...) ----------
+  function applyParams() {
+    const p = new URLSearchParams(location.hash.slice(1) || location.search.slice(1));
+    const to = p.get('to');
+    if (!to && !p.get('name')) return;
+    if (S.call) return toast('Finish the current call first.', true);
+    if (to) $('num').value = pretty(to);
+    $('cname').value = p.get('name') || '';
+    S.waitingFor = null; stopPoll();
+    checkPermission();
+  }
+  window.addEventListener('hashchange', () => { if (S.token) applyParams(); });
+  window.addEventListener('beforeunload', e => { if (S.call) { e.preventDefault(); e.returnValue = ''; } });
+
+  // ---------- boot ----------
+  if (S.token && S.agent) showDialer(); else showLogin();
+})();
+</script>
+</body>
+</html>
