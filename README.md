@@ -30,7 +30,7 @@ Unga n8n app-ah touch panna vendaam. Calls ku mattum oru separate app.
    WABA ID: WhatsApp Manager URL la `asset_id=` value (unga screenshot la `974170128559450`). Confirm pannitu use pannunga.
 6. **App settings → Basic → App secret** → copy → `APP_SECRET`.
 7. Server ready aana apram (step 2): App Dashboard → **WhatsApp → Configuration → Webhook**
-   - Callback URL: `https://dialer.sleepupmattress.com/webhook`
+   - Callback URL: `https://call.sleepupmattress.com/webhook`
    - Verify token: `.env` la vecha `VERIFY_TOKEN`
    - **Verify and save** → Webhook fields la **`calls` mattum** Subscribe.
 8. App top bar la **Live** mode on pannunga. Development mode la real call webhooks varaadhu.
@@ -76,7 +76,7 @@ sudo certbot --nginx -d call.sleepupmattress.com
 
 Dograh server la already Caddy/Traefik proxy irundha, adhulaye `call.sleepupmattress.com → 127.0.0.1:3100` add pannunga (WebSocket allow pannanum).
 
-Check: `https://dialer.sleepupmattress.com/health` → `{"ok":true,...}`
+Check: `https://call.sleepupmattress.com/health` → `{"ok":true,...}`
 
 ---
 
@@ -90,7 +90,7 @@ PIN maathuna andha telecaller automatic ah sign out aagiduvaanga.
 ## 4. Chrome extension (ovvoru telecaller PC la)
 
 1. `chrome://extensions` → **Developer mode** ON → **Load unpacked** → `chrome-extension` folder select.
-2. Extension → Details → **Extension options** → dialer link (default `https://dialer.sleepupmattress.com`).
+2. Extension → Details → **Extension options** → dialer link (default `https://call.sleepupmattress.com`).
 3. TeleCRM open pannunga → bottom-right la green **WhatsApp call** button varum.
    - Page la oru number irundha direct ah dialer open aagum; neraya irundha choose panna list varum.
    - Endha page la yum number select panni right-click → **Call "…" on WhatsApp**.

@@ -706,23 +706,16 @@
     }
   }
 
-  // ---------- prefill from TeleCRM extension (#to=...&name=...&call=1) ----------
-  async function applyParams() {
+  // ---------- prefill from TeleCRM extension (#to=...&name=...) ----------
+  function applyParams() {
     const p = new URLSearchParams(location.hash.slice(1) || location.search.slice(1));
     const to = p.get('to');
     if (!to && !p.get('name')) return;
-    // Consume the link so a reload never re-dials
-    history.replaceState(null, '', location.pathname);
     if (S.call) return toast('Finish the current call first.', true);
     if (to) $('num').value = pretty(to);
     $('cname').value = p.get('name') || '';
-    S.waitingFor = null; stopPoll(); clearTimeout(S.debounce);
-    await checkPermission();
-    // "call=1": dial straight away when the customer already allowed calls
-    if (p.get('call') === '1' && !S.call) {
-      if (!$('callBtn').disabled) startCall();
-      else toast("Can't call directly: " + $('permText').textContent, true);
-    }
+    S.waitingFor = null; stopPoll();
+    checkPermission();
   }
   window.addEventListener('hashchange', () => { if (S.token) applyParams(); });
   window.addEventListener('beforeunload', e => { if (S.call) { e.preventDefault(); e.returnValue = ''; } });

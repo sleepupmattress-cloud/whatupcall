@@ -41,9 +41,9 @@
     return [...found].slice(0, 6);
   }
 
-  function open(to, name = '') {
+  function open(to) {
     menu.hidden = true;
-    chrome.runtime.sendMessage({ type: 'open-dialer', to: to ? '91' + to : '', name, call: !!to });
+    chrome.runtime.sendMessage({ type: 'open-dialer', to: to ? '91' + to : '' });
   }
 
   function showMenu(nums) {
@@ -75,45 +75,4 @@
     if (!menu.hidden && !menu.contains(e.target) && !btn.contains(e.target)) menu.hidden = true;
   }, true);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') menu.hidden = true; });
-
-  // "WA CALL" next to TeleCRM's own CALL action: dials this lead on WhatsApp directly.
-  const isCallAction = el => (el.textContent || '').trim().toUpperCase() === 'CALL';
-
-  function leadFrom(bar) {
-    // Walk up from the action bar until we reach the lead card that holds the phone number
-    for (let el = bar; el && el !== document.body; el = el.parentElement) {
-      const text = el.innerText || '';
-      for (const m of text.matchAll(PHONE_RE)) {
-        const d = ten(m[0]);
-        if (d) return { to: d, name: (text.split('\n').map(s => s.trim()).find(Boolean) || '').slice(0, 80) };
-      }
-    }
-    return null;
-  }
-
-  function injectBarButtons() {
-    for (const el of document.querySelectorAll('button, [role="button"], div, span')) {
-      if (el.childElementCount > 3 || !isCallAction(el)) continue;
-      // Use the outermost element whose text is just "CALL" (icon + label wrapper)
-      let action = el;
-      while (action.parentElement && isCallAction(action.parentElement)) action = action.parentElement;
-      if (action.dataset.sudWa || action.parentElement?.querySelector(':scope > .sud-wa-inline')) continue;
-      action.dataset.sudWa = '1';
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'sud-wa-inline';
-      b.title = 'Call this lead on WhatsApp now';
-      b.innerHTML = `${ICON}<span>WA CALL</span>`;
-      b.addEventListener('click', e => {
-        e.preventDefault(); e.stopPropagation();
-        const lead = leadFrom(action.parentElement);
-        if (lead) open(lead.to, lead.name); else showMenu(findNumbers());
-      });
-      action.after(b);
-    }
-  }
-  let scanT;
-  new MutationObserver(() => { clearTimeout(scanT); scanT = setTimeout(injectBarButtons, 300); })
-    .observe(document.body, { childList: true, subtree: true });
-  injectBarButtons();
 })();
