@@ -1,5 +1,5 @@
 // Change this once, or set it per-browser from the extension's Options page.
-const DEFAULT_DIALER_URL = 'https://call.sleepupmattress.com';
+const DEFAULT_DIALER_URL = 'https://dialer.sleepupmattress.com';
 
 async function dialerUrl() {
   const { dialerUrl } = await chrome.storage.sync.get('dialerUrl');
