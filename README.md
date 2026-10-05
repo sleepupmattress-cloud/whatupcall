@@ -92,7 +92,10 @@ PIN maathuna andha telecaller automatic ah sign out aagiduvaanga.
 1. `chrome://extensions` → **Developer mode** ON → **Load unpacked** → `chrome-extension` folder select.
 2. Extension → Details → **Extension options** → dialer link (default `https://call.sleepupmattress.com`).
 3. TeleCRM open pannunga → bottom-right la green **WhatsApp call** button varum.
+   - Lead la TeleCRM oda **CALL** click pannina WhatsApp dialer open aagi call start aagum. TeleCRM normal call venumna **Shift + CALL**.
    - Page la oru number irundha direct ah dialer open aagum; neraya irundha choose panna list varum.
+   - Dialer link set pannalana: `http://localhost:3100` run aagitu irundha adhu, illana `https://dialer.sleepupmattress.com`.
+   - Pazhaya `telecrm-wa-call-extension` load pannirundha remove pannunga, illana rendum CALL click-ah pudikkum.
    - Endha page la yum number select panni right-click → **Call "…" on WhatsApp**.
 
 TeleCRM domain `telecrm.in` illana `manifest.json` la `matches` / `host_permissions` maathunga.

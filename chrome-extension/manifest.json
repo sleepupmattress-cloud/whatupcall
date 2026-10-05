@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SleepUp WhatsApp Call",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Adds a WhatsApp call button to TeleCRM and a right-click 'Call on WhatsApp' for any number.",
   "permissions": ["contextMenus", "storage"],
   "host_permissions": ["*://*.telecrm.in/*"],
